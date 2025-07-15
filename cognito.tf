@@ -4,11 +4,11 @@ resource "aws_cognito_user_pool" "weather_scanner_user_pool" {
 
   # Policy per la complessità della password
   password_policy {
-    minimum_length    = 8
-    require_lowercase = true
-    require_uppercase = true
-    require_numbers   = true
-    require_symbols   = true
+    minimum_length                   = 8
+    require_lowercase                = true
+    require_uppercase                = true
+    require_numbers                  = true
+    require_symbols                  = true
     temporary_password_validity_days = 7 # Opzionale: validità password temporanea
   }
 
@@ -23,10 +23,10 @@ resource "aws_cognito_user_pool" "weather_scanner_user_pool" {
 
   # Attributi standard che vuoi richiedere o rendere obbligatori
   schema {
-    name = "email"
+    name                = "email"
     attribute_data_type = "String"
-    mutable  = true
-    required = true
+    mutable             = true
+    required            = true
   }
   # Puoi aggiungere altri attributi come 'name', 'phone_number', etc.
 
@@ -52,7 +52,7 @@ resource "aws_cognito_user_pool" "weather_scanner_user_pool" {
   # }
 
   tags = {
-    Name = "weather-scanner-user-pool"
+    Name        = "weather-scanner-user-pool"
     Environment = "FreeTier"
   }
 }
@@ -60,11 +60,11 @@ resource "aws_cognito_user_pool" "weather_scanner_user_pool" {
 # Amazon Cognito User Pool Client (App Client)
 # Le tue applicazioni (web, mobile) useranno questo client per interagire con il User Pool.
 resource "aws_cognito_user_pool_client" "weather_scanner_app_client" {
-  name = "weather-scanner-client"
-  user_pool_id = aws_cognito_user_pool.weather_scanner_user_pool.id
-  generate_secret = false # Impostiamo a true solo per backend che usano un client segreto
-  explicit_auth_flows = ["ALLOW_USER_SRP_AUTH", "ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_PASSWORD_AUTH"] # Flussi di autenticazione abilitati
-  prevent_user_existence_errors = "ENABLED" # Impedisce di rivelare se un utente esiste o meno in fase di login/registrazione
+  name                          = "weather-scanner-client"
+  user_pool_id                  = aws_cognito_user_pool.weather_scanner_user_pool.id
+  generate_secret               = false                                                                           # Impostiamo a true solo per backend che usano un client segreto
+  explicit_auth_flows           = ["ALLOW_USER_SRP_AUTH", "ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_PASSWORD_AUTH"] # Flussi di autenticazione abilitati
+  prevent_user_existence_errors = "ENABLED"                                                                       # Impedisce di rivelare se un utente esiste o meno in fase di login/registrazione
 
   # URL di redirect per i flussi di autenticazione basati su browser (es. interfaccia UI ospitata)
   # Devi specificare gli URL a cui Cognito può reindirizzare l'utente dopo l'autenticazione/logout.
@@ -73,14 +73,14 @@ resource "aws_cognito_user_pool_client" "weather_scanner_app_client" {
   logout_urls   = ["http://localhost:3000/logout", "https://your-app.com/logout"]
 
   # Abilita i tipi di concessione OAuth (Code Grant, Implicit Grant)
-  allowed_oauth_flows = ["code"]
+  allowed_oauth_flows                  = ["code"]
   allowed_oauth_flows_user_pool_client = true # Questo è cruciale per i client che non hanno un segreto
-  allowed_oauth_scopes = ["phone", "email", "openid", "profile", "aws.cognito.signin.user.admin"]
+  allowed_oauth_scopes                 = ["phone", "email", "openid", "profile", "aws.cognito.signin.user.admin"]
 
   # Tempo di scadenza dei token (in minuti, 1440 minuti = 24 ore)
-  access_token_validity     = 60
-  id_token_validity         = 60
-  refresh_token_validity    = 20160 # 28 giorni
+  access_token_validity  = 60
+  id_token_validity      = 60
+  refresh_token_validity = 20160 # 28 giorni
 }
 
 # Amazon Cognito User Pool Domain
