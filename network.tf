@@ -81,40 +81,40 @@
 # ################################
 
 
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "5.1.2"
+# module "vpc" {
+#   source  = "terraform-aws-modules/vpc/aws"
+#   version = "5.1.2"
 
-  name = "weather-scanner-vpc"
-  cidr = "10.0.0.0/16"
+#   name = "weather-scanner-vpc"
+#   cidr = "10.0.0.0/16"
 
-  azs = data.aws_availability_zones.available.names
+#   azs = data.aws_availability_zones.available.names
 
 
-  database_subnet_names = ["free-tier-rds-private-subnet-a", "free-tier-rds-private-subnet-b"]
-  database_subnets    = ["10.0.1.0/24", "10.0.2.0/24"]
+#   database_subnet_names = ["free-tier-rds-private-subnet-a", "free-tier-rds-private-subnet-b"]
+#   database_subnets    = ["10.0.1.0/24", "10.0.2.0/24"]
 
-  public_subnet_names = ["eks-free-tier-public-subnet-a", "eks-free-tier-public-subnet-b"]
-  public_subnets      = ["10.1.1.0/24", "10.1.2.0/24"] # per EKS
+#   public_subnet_names = ["eks-free-tier-public-subnet-a", "eks-free-tier-public-subnet-b"]
+#   public_subnets      = ["10.1.1.0/24", "10.1.2.0/24"] # per EKS
 
-  enable_dns_hostnames = true
-  enable_dns_support   = true
+#   enable_dns_hostnames = true
+#   enable_dns_support   = true
 
-  public_subnet_tags = {
-    # "kubernetes.io/role/elb" = "1"
-  }
+#   public_subnet_tags = {
+#     # "kubernetes.io/role/elb" = "1"
+#   }
 
-  private_subnet_tags = {
-    # "kubernetes.io/role/internal-elb" = "1"
-  }
+#   private_subnet_tags = {
+#     # "kubernetes.io/role/internal-elb" = "1"
+#   }
 
-  tags = {
-    Environment = "dev"
-    Terraform   = "true"
-  }
+#   tags = {
+#     Environment = "dev"
+#     Terraform   = "true"
+#   }
 
-  vpc_tags = {
-    Name = "weather-scanner-vpc"
-  }
+#   vpc_tags = {
+#     Name = "weather-scanner-vpc"
+#   }
 
-}
+# }
