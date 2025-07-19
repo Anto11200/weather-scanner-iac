@@ -2,23 +2,19 @@
 resource "aws_cognito_user_pool" "weather_scanner_user_pool" {
   name = "weather-scanner-users"
 
-  # Policy per la complessità della password
-  password_policy {
-    minimum_length                   = 8
-    require_lowercase                = true
-    require_uppercase                = true
-    require_numbers                  = true
-    require_symbols                  = true
-    temporary_password_validity_days = 7 # Opzionale: validità password temporanea
+  auto_verified_attributes = ["email"]
+
+  # Impostazione per il recupero della password tramite email
+  account_recovery_setting {
+    recovery_mechanism {
+      name     = "verified_email"
+      priority = 1
+    }
   }
 
-  # Configurazione per l'invio delle email (per verifica, reset password)
-  # Usiamo il servizio di email predefinito di Cognito.
-  # Se superiamo il limite del free tier di email di Cognito (1000/mese),
-  # dovremmo configurare Amazon SES per invii più consistenti.
-  email_configuration {
-    email_sending_account = "COGNITO_DEFAULT" # Usa il servizio predefinito di Cognito
-    # source_arn          = "arn:aws:ses:REGION:ACCOUNT_ID:identity/YOUR_VERIFIED_EMAIL_OR_DOMAIN" # Se si vuole usare SES
+  # 
+  admin_create_user_config {
+    allow_admin_create_user_only = false
   }
 
   # Attributi standard che vuoi richiedere o rendere obbligatori
@@ -28,28 +24,61 @@ resource "aws_cognito_user_pool" "weather_scanner_user_pool" {
     mutable             = true
     required            = true
   }
-  # Puoi aggiungere altri attributi come 'name', 'phone_number', etc.
+
+  # Amazon Cognito User Pool Client (App Client)
+  # L'applicazione userà questo client per interagire con l'User Pool.
+  resource "aws_cognito_user_pool_client" "weather_scanner_app_client" {
+    name                          = "weather-scanner-client"
+    user_pool_id                  = aws_cognito_user_pool.weather_scanner_user_pool.id
+
+    generate_secret               = false # Impostiamo a true solo per backend che usano un client segreto
+    
+    allowed_oauth_flows       = ["code"]
+    allowed_oauth_scopes      = ["email", "openid", "profile"]
+    allowed_oauth_flows_user_pool_client = true
+
+    # URL di redirect per i flussi di autenticazione basati su browser
+    callback_urls = ["http://localhost:3000/callback", "https://your-app.com/callback"]
+    logout_urls   = ["http://localhost:3000/logout", "https://your-app.com/logout"]
+
+    supported_identity_providers = ["Google"]
+  }
+
+  resource "aws_cognito_identity_provider" "google" {
+    user_pool_id = aws_cognito_user_pool.weather_scanner_user_pool.id
+    provider_name = "Google"
+    provider_type = "Google"
+
+    provider_details = {
+      client_id     = "GOOGLE_CLIENT_ID"
+      client_secret = "GOOGLE_CLIENT_SECRET"
+      authorize_scopes = "profile email openid"
+    }
+
+    # Attributi di google che verranno mappati nei campi cognito
+    attribute_mapping = {
+      email       = "email"
+      given_name  = "given_name" # vedere se devono essere modificati
+      family_name = "family_name" # vedere se devono essere modificati
+    }
+  }
+
+  resource "aws_cognito_identity_pool" "weather_scanner_users_pool" {
+    identity_pool_name               = "federated-identity-pool"
+    allow_unauthenticated_identities = false
+
+    cognito_identity_providers {
+      client_id         = aws_cognito_user_pool_client.weather_scanner_app_client.id
+      provider_name     = aws_cognito_user_pool.weather_scanner_user_pool.endpoint
+      server_side_token_check = false
+    }
+  }
 
   # Configurazione dell'MFA (Multi-Factor Authentication)
-  # Per un free tier, potresti voler disabilitare l'MFA per ridurre la complessità
-  # o attivare solo l'MFA facoltativo per gli utenti.
-  mfa_configuration = "OFF" # Off, ON (richiesto), OPTIONAL (facoltativo)
+  mfa_configuration = "OFF"
 
   # Nomi dei campi che permettono agli utenti di accedere (username, email, phone_number)
   username_attributes = ["email"] # Gli utenti potranno usare l'email come username
-
-  # Policy per i nomi utente, se vuoi renderli case-insensitive
-  username_configuration {
-    case_sensitive = false
-  }
-
-  # Configurazione della disattivazione/cancellazione utente
-  # account_recovery_setting {
-  #   recovery_mechanism {
-  #     name     = "verified_email"
-  #     priority = 1
-  #   }
-  # }
 
   tags = {
     Name        = "weather-scanner-user-pool"
@@ -57,31 +86,7 @@ resource "aws_cognito_user_pool" "weather_scanner_user_pool" {
   }
 }
 
-# Amazon Cognito User Pool Client (App Client)
-# Le tue applicazioni (web, mobile) useranno questo client per interagire con il User Pool.
-resource "aws_cognito_user_pool_client" "weather_scanner_app_client" {
-  name                          = "weather-scanner-client"
-  user_pool_id                  = aws_cognito_user_pool.weather_scanner_user_pool.id
-  generate_secret               = false                                                                           # Impostiamo a true solo per backend che usano un client segreto
-  explicit_auth_flows           = ["ALLOW_USER_SRP_AUTH", "ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_PASSWORD_AUTH"] # Flussi di autenticazione abilitati
-  prevent_user_existence_errors = "ENABLED"                                                                       # Impedisce di rivelare se un utente esiste o meno in fase di login/registrazione
 
-  # URL di redirect per i flussi di autenticazione basati su browser (es. interfaccia UI ospitata)
-  # Devi specificare gli URL a cui Cognito può reindirizzare l'utente dopo l'autenticazione/logout.
-  # Sostituisci con gli URL reali della tua applicazione.
-  callback_urls = ["http://localhost:3000/callback", "https://your-app.com/callback"]
-  logout_urls   = ["http://localhost:3000/logout", "https://your-app.com/logout"]
-
-  # Abilita i tipi di concessione OAuth (Code Grant, Implicit Grant)
-  allowed_oauth_flows                  = ["code"]
-  allowed_oauth_flows_user_pool_client = true # Questo è cruciale per i client che non hanno un segreto
-  allowed_oauth_scopes                 = ["phone", "email", "openid", "profile", "aws.cognito.signin.user.admin"]
-
-  # Tempo di scadenza dei token (in minuti, 1440 minuti = 24 ore)
-  access_token_validity  = 60
-  id_token_validity      = 60
-  refresh_token_validity = 20160 # 28 giorni
-}
 
 # Amazon Cognito User Pool Domain
 # Permette di ospitare una pagina di login/registrazione/recupero password

@@ -110,6 +110,8 @@ module "nlb" {
   vpc_id             = module.vpc_docdb.vpc_id
   subnets            = module.vpc_docdb.public_subnets
 
+  enable_deletion_protection = false
+
   security_group_ingress_rules = {
     mongo_traffic = {
       from_port   = 27017
@@ -128,7 +130,7 @@ module "nlb" {
   listeners = {
     ex-tcp-udp = {
       port     = 27017
-      protocol = "TCP_UDP"
+      protocol = "TCP"
       forward = {
         target_group_key = "ex-target"
       }
@@ -147,4 +149,6 @@ module "nlb" {
   tags = {
     Environment = "Development"
   }
+
+  providers = {aws = aws.anto11200}
 }
