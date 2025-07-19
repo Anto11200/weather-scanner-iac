@@ -1,3 +1,6 @@
+
+
+
 resource "aws_docdb_cluster" "docdb" {
   cluster_identifier      = "my-docdb-cluster"
   engine                  = "docdb"
@@ -7,6 +10,7 @@ resource "aws_docdb_cluster" "docdb" {
   preferred_backup_window = "07:00-09:00"
   skip_final_snapshot     = true
   db_subnet_group_name    = aws_docdb_subnet_group.weather_scanner_docdb_subnet_group.name
+  vpc_security_group_ids = [aws_security_group.docdb_sg.id]
   provider = aws.anto11200
 }
 
@@ -96,8 +100,6 @@ module "vpc_docdb" {
 
   providers = {aws = aws.anto11200}
 }
-
-
 data "dns_a_record_set" "docdb_dynamic_ip" {
   host = aws_docdb_cluster_instance.default.endpoint
 }
@@ -150,5 +152,11 @@ module "nlb" {
     Environment = "Development"
   }
 
+  route53_records = {}
+
   providers = {aws = aws.anto11200}
+}
+
+output "name" {
+  value = module.nlb
 }
