@@ -1,48 +1,154 @@
-# Data source per ottenere gli AZ disponibili (già presente in main.tf/network.tf)
-data "aws_availability_zones" "available" {
-  state = "available"
+resource "aws_docdb_cluster" "docdb" {
+  cluster_identifier      = "my-docdb-cluster"
+  engine                  = "docdb"
+  master_username         = "foo"
+  master_password         = "mustbeeightchars"
+  backup_retention_period = 5
+  preferred_backup_window = "07:00-09:00"
+  skip_final_snapshot     = true
+  db_subnet_group_name    = aws_docdb_subnet_group.weather_scanner_docdb_subnet_group.name
+  provider = aws.anto11200
 }
 
-# DocumentDB Subnet Group
-# Necessario per distribuire il cluster DocumentDB nelle sottoreti della tua VPC.
-# Queste sottoreti dovrebbero essere PRIVATE per sicurezza.
+resource "aws_docdb_cluster_instance" "default" {
+  identifier                   = "mydocdb-cluster-instance"
+  cluster_identifier           = aws_docdb_cluster.docdb.id
+  instance_class               = "db.t3.medium"
+  provider = aws.anto11200
+}
+
+resource "aws_security_group" "docdb_sg" {
+  name = "weather-scanner-docdb-sg"
+  description = "Consente accesso da EKS a DocumentDB"
+  vpc_id = module.vpc_docdb.vpc_id
+
+  ingress {
+    from_port = 27017 # Porta predefinita di DocumentDB (MongoDB)
+    to_port = 27017
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Accesso da security group dei nodi EKS"
+  }
+
+  # Regola di uscita: Permetti tutto il traffico in uscita (comune per DB)
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "weather-scanner-docdb-sg"
+    Environment = "FreeTier"
+  }
+  provider = aws.anto11200
+}
+
+################################
+#                              #
+#      DocumentDB Subnet       #
+#                              #
+################################
+
 resource "aws_docdb_subnet_group" "weather_scanner_docdb_subnet_group" {
-  name = "weather-scanner-docdb-subnet-group"
-  # Sostituisci con gli ID delle tue sottoreti PRIVATE dove vuoi distribuire DocumentDB
-  # Assicurati che siano almeno due sottoreti in due AZ diverse per alta disponibilità (anche se qui con 1 istanza non ha senso)
-  # Per Free Tier, 2 sottoreti bastano.
-  subnet_ids = [aws_subnet.private_subnet_a_rds.id, aws_subnet.private_subnet_b_rds.id] # Esempio usando le subnet della VPC RDS
-  # Se preferisci una VPC separata per i database, assicurati di usare le sue sottoreti.
+  subnet_ids = module.vpc_docdb.public_subnets
+  name = "docdb-subnet-group"
+  description = "Subnet group per Amazon DocumentDB"
+  provider = aws.anto11200
 }
 
-# DocumentDB Security Group
-# Controlla il traffico in entrata e uscita dal tuo cluster DocumentDB.
-# Limita l'accesso solo all'applicazione (es. il tuo cluster EKS) che ne ha bisogno.
-# resource "aws_security_group" "weather_scanner_docdb_sg" {
-#   name        = "weather-scanner-docdb-sg"
-#   description = "Allow inbound traffic to DocumentDB cluster"
-#   vpc_id      = aws_vpc.main.id # O la VPC in cui risiedono le tue sottoreti DocumentDB
+#############################
+#                           #
+#       VPC DocumentDB      #
+#                           #
+#############################
 
-#   ingress {
-#     from_port   = 27017 # Porta predefinita di DocumentDB (MongoDB)
-#     to_port     = 27017
-#     protocol    = "tcp"
+# Data source per ottenere gli AZ disponibili
+data "aws_availability_zones" "available_eu" {
+  state = "available"
+  provider = aws.anto11200
+}
 
-#     source_security_group_id = aws_eks_cluster.free_tier_eks.vpc_config[0].security_group_ids[0] # per EKS
-#     cidr_blocks = ["10.1.1.0/24", "10.1.2.0/24"]   # Regola di ingresso: Permetti traffico dalla tua applicazione (EKS Security Group)
-#     description = "Allow traffic from EKS/Application to DocumentDB"
-#   }
+module "vpc_docdb" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "5.1.2"
 
-#   # Regola di uscita: Permetti tutto il traffico in uscita (comune per DB)
-#   egress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
+  name = "weather-scanner-vpc"
+  cidr = "10.0.0.0/16"
 
-#   tags = {
-#     Name        = "weather-scanner-docdb-sg"
-#     Environment = "FreeTier"
-#   }
-# }
+  azs = data.aws_availability_zones.available_eu.names
+
+  public_subnets    = ["10.0.0.0/24", "10.0.1.0/24"] # per RDS
+  public_subnet_names = ["docdb-public-subnet-a", "docdb-public-subnet-b"]
+
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Environment = "dev"
+    Terraform   = "true"
+  }
+
+  vpc_tags = {
+    Name = "weather-scanner-vpc"
+  }
+
+  providers = {aws = aws.anto11200}
+}
+
+
+data "dns_a_record_set" "docdb_dynamic_ip" {
+  host = aws_docdb_cluster_instance.default.endpoint
+}
+
+module "nlb" {
+  source = "terraform-aws-modules/alb/aws"
+
+  name               = "weather-scanner-nlb"
+  load_balancer_type = "network"
+  vpc_id             = module.vpc_docdb.vpc_id
+  subnets            = module.vpc_docdb.public_subnets
+
+  enable_deletion_protection = false
+
+  security_group_ingress_rules = {
+    mongo_traffic = {
+      from_port   = 27017
+      to_port     = 27017
+      ip_protocol = "tcp"
+      description = "MongoDB traffic"
+      cidr_ipv4   = "0.0.0.0/0"
+    }
+  }
+  security_group_egress_rules = {
+    all = {
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
+    }
+  }
+  listeners = {
+    ex-tcp-udp = {
+      port     = 27017
+      protocol = "TCP"
+      forward = {
+        target_group_key = "ex-target"
+      }
+    }
+  }
+
+  target_groups = {
+    ex-target = {
+      protocol    = "TCP"
+      port        = 27017
+      target_type = "ip"
+      target_id   = data.dns_a_record_set.docdb_dynamic_ip.addrs[0]
+    }
+  }
+
+  tags = {
+    Environment = "Development"
+  }
+
+  providers = {aws = aws.anto11200}
+}
