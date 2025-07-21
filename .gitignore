@@ -79,4 +79,5 @@ helpers/foundation-deployer/.steps.json
 *.tf-e
 
 # Go multi-module workspace sum
-go.work.sum
+go.work.sumterraform.tfstate
+terraform.tfstate.backup
