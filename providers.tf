@@ -4,19 +4,23 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "6.3.0"
+      version = "5.95.0"
     }
     dns = {
-        source = "hashicorp/dns"
-        version = "3.4.3"
-      }
+      source = "hashicorp/dns"
+      version = "3.4.3"
+    }
+    kubernetes = {
+      source = "hashicorp/kubernetes"
+      version = "~> 2.0"
+    }
   }
 }
 
-# provider "aws" {
-#   region = "us-east-1"
-#   profile = "default"
-# }
+provider "aws" {
+  region = "us-east-1"
+  profile = "default"
+}
 
 provider "aws" {
   region = "eu-west-1"

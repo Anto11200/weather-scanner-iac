@@ -1,6 +1,3 @@
-
-
-
 resource "aws_docdb_cluster" "docdb" {
   cluster_identifier      = "my-docdb-cluster"
   engine                  = "docdb"
@@ -83,7 +80,7 @@ module "vpc_docdb" {
 
   azs = data.aws_availability_zones.available_eu.names
 
-  public_subnets    = ["10.0.0.0/24", "10.0.1.0/24"] # per RDS
+  public_subnets    = ["10.0.3.0/24", "10.0.4.0/24"]
   public_subnet_names = ["docdb-public-subnet-a", "docdb-public-subnet-b"]
 
   enable_dns_hostnames = true
@@ -100,6 +97,7 @@ module "vpc_docdb" {
 
   providers = {aws = aws.anto11200}
 }
+
 data "dns_a_record_set" "docdb_dynamic_ip" {
   host = aws_docdb_cluster_instance.default.endpoint
 }
@@ -151,8 +149,6 @@ module "nlb" {
   tags = {
     Environment = "Development"
   }
-
-  route53_records = {}
 
   providers = {aws = aws.anto11200}
 }
