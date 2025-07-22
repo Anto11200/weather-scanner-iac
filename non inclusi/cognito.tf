@@ -33,12 +33,6 @@ resource "aws_cognito_identity_provider" "google" {
     authorize_scopes = "openid email profile"
     client_id       = var.google_client_id
     client_secret   = var.google_client_secret
-    token_url                     = "https://www.googleapis.com/oauth2/v4/token"
-    token_request_method          = "POST"
-    oidc_issuer                   = "https://accounts.google.com"
-    authorize_url                 = "https://accounts.google.com/o/oauth2/v2/auth"
-    attributes_url                = "https://people.googleapis.com/v1/people/me?personFields="
-    attributes_url_add_attributes = "true"
   }
 
   attribute_mapping = {
@@ -60,4 +54,7 @@ resource "aws_cognito_user_pool_client" "weather_scanner_app_client" {
   # Da cambiare con le pagine in cui deve essere reindirizzato dopo il login e logout
   callback_urls                        = ["http://localhost:8000/cognito/google/callback/"] # Da cambiare in futuro con il DNS del cluster
   logout_urls                          = ["http://localhost:8000/login/"] # Da cambiare in futuro con il DNS del cluster
+
+  # dipendenza esplicita per assicurare l'ordine corretto
+  depends_on = [aws_cognito_identity_provider.google]
 }
