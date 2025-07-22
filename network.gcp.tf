@@ -40,6 +40,13 @@ module "vpc-gcp" {
   ]
 }
 
+resource "local_file" "example-env-file" {
+    filename = "../weather-scanner-crawler/.env"
+  content = <<EOF
+    test=${module.vpc_gcp.self_link}
+  EOF
+}
+
 # module "cluster-gke" {
 #   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gke-cluster-autopilot?ref=v40.0.0"
 #   project_id = module.project-gcp.project_id
