@@ -10,6 +10,10 @@ terraform {
       source = "hashicorp/dns"
       version = "3.4.3"
     }
+    google = {
+      source = "hashicorp/google"
+      version = "6.44.0"
+    }
     kubernetes = {
       source = "hashicorp/kubernetes"
       version = "~> 2.0"
@@ -17,13 +21,15 @@ terraform {
   }
 }
 
-provider "aws" {
-  region = "us-east-1"
-  profile = "default"
-}
+# provider "aws" {
+#   region = "us-east-1"
+#   profile = "default"
+# }
 
-provider "aws" {
-  region = "eu-west-1"
-  profile = "anto11200"
-  alias = "anto11200"
-}
+# provider "aws" {
+#   region = "eu-west-1"
+#   profile = "anto11200"
+#   alias = "anto11200"
+# }
+
+provider "google" {}
