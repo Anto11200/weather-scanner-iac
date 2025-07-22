@@ -1,0 +1,5 @@
+Installa gcloud cli su WSL: https://cloud.google.com/sdk/docs/install#deb
+
+autenticati con: gcloud auth application-default login (in questo modo puoi dare gli apply terraform per le risorse su GCP)
+
+BUTTALE QUI DENTRO (.tfvars)
