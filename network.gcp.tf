@@ -36,43 +36,101 @@ module "vpc-gcp" {
       ip_cidr_range = "10.0.1.0/24"
       name          = "gke-cp"
       region        = "europe-west8"
+    },
+    {
+      ip_cidr_range = "10.0.2.0/28"
+      name          = "gke-bastion-host"
+      region        = "europe-west8"
     }
   ]
 }
 
-resource "local_file" "example-env-file" {
-    filename = "../weather-scanner-crawler/.env"
-  content = <<EOF
-    test=${module.vpc_gcp.self_link}
-  EOF
+# resource "local_file" "example-env-file" {
+#     filename = "../weather-scanner-crawler/.env"
+#   content = <<EOF
+#     test=${module.vpc_gcp.self_link}
+#   EOF
+# }
+
+# https://cloud.google.com/kubernetes-engine/docs/tutorials/private-cluster-bastion
+module "bastion-host-vm" {
+  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/compute-vm?ref=v40.0.0"
+  project_id = module.project-gcp.project_id
+  zone       = "europe-west8-b"
+
+  instance_type = "e2-micro"
+  name       = "gke-bastion-host"
+  network_interfaces = [{
+    network    = module.vpc-gcp.self_link
+    subnetwork = module.vpc-gcp.subnet_self_links["europe-west8/gke-bastion-host"]
+  }]
 }
 
-# module "cluster-gke" {
-#   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gke-cluster-autopilot?ref=v40.0.0"
-#   project_id = module.project-gcp.project_id
-#   name       = "weather-scanner-gke"
-#   location   = "europe-west8"
-#   access_config = {
-#     ip_access = {
-#       private_endpoint_config = {
-#         endpoint_subnetwork = module.vpc-gcp.subnet_ids["europe-west8/gke-cp"]
-#         global_access       = false
-#       }
-#       authorized_ranges = {
-#         internal-vms = "10.0.0.0/8"
-#       }
-#     }
-#   }
+module "cluster-gke" {
+  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gke-cluster-standard?ref=v40.0.0"
+  project_id = module.project-gcp.project_id
+  
+  name       = "weather-scanner-gke"
 
-#   vpc_config = {
-#     network    = module.vpc-gcp.self_link
-#     subnetwork = module.vpc-gcp.subnet_self_links["europe-west8/gke"]
-#     secondary_range_names = {
-#       pods     = "pods"
-#       services = "services"
-#     }
-#   }
-#   labels = {
-#     environment = "dev"
-#   }
-# }
+  deletion_protection = false
+  location   = "europe-west8"
+  access_config = {
+    ip_access = {
+      private_endpoint_config = {
+        endpoint_subnetwork = module.vpc-gcp.subnet_ids["europe-west8/gke-cp"]
+        global_access       = false
+      }
+      authorized_ranges = {
+        internal-vms = "10.0.2.0/28" # Solo la connettività dal bastion host può connettersi dal GKE
+      }
+    }
+  }
+
+  default_nodepool = {
+    remove_pool = false
+  }
+
+  vpc_config = {
+    network    = module.vpc-gcp.self_link
+    subnetwork = module.vpc-gcp.subnet_self_links["europe-west8/gke"]
+    secondary_range_names = {
+      pods     = "pods"
+      services = "services"
+    }
+  }
+  labels = {
+    environment = "dev"
+  }
+}
+
+module "firewall-gcp" {
+  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/net-vpc-firewall?ref=v40.0.0"
+  project_id = module.project-gcp.project_id
+  network    = module.vpc-gcp.name
+  egress_rules = {
+    # Google possiede una allow-by-default in egress
+  }
+  ingress_rules = {
+    # Google possiede una allow-by-default in ingress
+    allow-ingress-bastion-from-iap = {
+      description   = "Allow ingress from a specific tag."
+      source_ranges = ["35.235.240.0/20"]
+      destination_ranges = [ module.vpc-gcp.subnet_ips["europe-west8/gke-bastion-host"],module.vpc-gcp.subnet_ips["europe-west8/gke-cp"] ]
+    }
+    allow-ingress-gke-from-bastion = {
+      description   = "Allow ingress from a specific tag."
+      source_ranges = [ module.vpc-gcp.subnet_ips["europe-west8/gke-bastion-host"] ]
+      destination_ranges = [ module.vpc-gcp.subnet_ips["europe-west8/gke-cp"] ]
+    }
+    allow-ingress-gke-from-gke-no = {
+      description   = "Allow ingress from a specific tag."
+      source_ranges = [ module.vpc-gcp.subnet_ips["europe-west8/gke"] ]
+      destination_ranges = [ module.vpc-gcp.subnet_ips["europe-west8/gke-cp"] ]
+    }
+    deny-from-all = {
+      deny = false
+      description   = "Allow ingress from a specific tag."
+      destination_ranges = [ "0.0.0.0/0" ]
+    }
+  }
+}
