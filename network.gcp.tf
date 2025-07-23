@@ -45,6 +45,14 @@ module "vpc-gcp" {
   ]
 }
 
+
+module "nat" {
+  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/net-cloudnat?ref=v40.0.0"
+  project_id = module.project-gcp.project_id
+  name       = "weatherscanner-nat"
+  router_network = module.vpc-gcp.self_link
+}
+
 # resource "local_file" "example-env-file" {
 #     filename = "../weather-scanner-crawler/.env"
 #   content = <<EOF
