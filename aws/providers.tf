@@ -1,6 +1,10 @@
 terraform {
   required_version = "1.12.2"
 
+  backend "gcs" {
+    bucket = "weatherscanner-tf-state-aws"
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
