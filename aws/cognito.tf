@@ -41,6 +41,15 @@ resource "aws_cognito_identity_provider" "google" {
   }
 }
 
+# Creazione del Dominio Cognito gestito
+resource "aws_cognito_user_pool_domain" "weather_scanner_domain" {
+  domain       = "weather-scanner-app"
+  user_pool_id = aws_cognito_user_pool.weather_scanner.id
+
+  # Dipendenza esplicita per assicurare che l'User Pool esista prima del dominio
+  depends_on = [aws_cognito_user_pool.weather_scanner]
+}
+
 # Creazione client per l'applicazione
 resource "aws_cognito_user_pool_client" "weather_scanner_app_client" {
   name                                 = "weather-scanner-client"

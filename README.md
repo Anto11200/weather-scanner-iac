@@ -35,3 +35,4 @@ terraform apply
 Abbiamo finito di lavorare?
 
 terraform destroy# weather-scanner-iac
+
