@@ -100,6 +100,7 @@ module "bastion-service-account" {
   }
 }
 
+# Da buttare giù
 # https://cloud.google.com/kubernetes-engine/docs/tutorials/private-cluster-bastion
 module "bastion-host-vm" {
   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/compute-vm?ref=v40.0.0"
@@ -119,6 +120,7 @@ module "bastion-host-vm" {
   
 }
 
+# Da buttare giù
 module "cluster-gke" {
   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gke-cluster-standard?ref=v40.0.0"
   project_id = module.project-gcp.project_id
