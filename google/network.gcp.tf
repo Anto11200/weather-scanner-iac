@@ -85,7 +85,7 @@ module "nat" {
 module "bastion-service-account" {
   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/iam-service-account?ref=v40.0.0"
   project_id = module.project-gcp.project_id
-  name       = "github-deploy-sa"
+  name       = "bastion-sa"
   # non-authoritative roles granted *to* the service accounts on other resources
   iam_project_roles = {
     "${module.project-gcp.project_id}" = [
