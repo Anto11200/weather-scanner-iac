@@ -9,7 +9,16 @@ module "project-gcp" {
       number = "886794755170"
     }
   }
-  
+
+  iam = {
+    "roles/iap.tunnelResourceAccessor" = [
+      module.github-service-account.iam_email
+    ],
+    "roles/compute.instanceAdmin.v1" = [
+      module.github-service-account.iam_email
+    ]
+  }
+
   services = [
     "container.googleapis.com",  # Necessario per GKE
     "compute.googleapis.com", # Necessario per GKE
@@ -45,6 +54,18 @@ module "vpc-gcp" {
   ]
 }
 
+module "github-service-account" {
+  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/iam-service-account?ref=v40.0.0"
+  project_id = module.project-gcp.project_id
+  name       = "github-deploy-sa"
+  # non-authoritative roles granted *to* the service accounts on other resources
+  iam_project_roles = {
+    "${module.project-gcp.project_id}" = [
+      "roles/container.clusterViewer"
+    ]
+  }
+}
+
 
 module "nat" {
   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/net-cloudnat?ref=v40.0.0"
@@ -61,6 +82,24 @@ module "nat" {
 #   EOF
 # }
 
+module "bastion-service-account" {
+  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/iam-service-account?ref=v40.0.0"
+  project_id = module.project-gcp.project_id
+  name       = "github-deploy-sa"
+  # non-authoritative roles granted *to* the service accounts on other resources
+  iam_project_roles = {
+    "${module.project-gcp.project_id}" = [
+      "roles/container.clusterViewer"
+    ]
+  }
+
+  iam = {
+    "roles/iam.serviceAccountUser" = [
+      module.github-service-account.iam_email
+    ]
+  }
+}
+
 # https://cloud.google.com/kubernetes-engine/docs/tutorials/private-cluster-bastion
 module "bastion-host-vm" {
   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/compute-vm?ref=v40.0.0"
@@ -73,6 +112,11 @@ module "bastion-host-vm" {
     network    = module.vpc-gcp.self_link
     subnetwork = module.vpc-gcp.subnet_self_links["europe-west12/gke-bastion-host"]
   }]
+
+  service_account = {
+    email = module.bastion-service-account.email
+  }
+  
 }
 
 module "cluster-gke" {
