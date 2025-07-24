@@ -54,6 +54,30 @@ module "vpc-gcp" {
   ]
 }
 
+module "gcp-bucket" {
+  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gcs?ref=v40.0.0"
+  name       = "weatherscanner-tf-state-gcp"
+  project_id = module.project-gcp.project_id
+  location   = "europe-west8"
+  versioning = true
+}
+
+module "aws-bucket" {
+  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gcs?ref=v40.0.0"
+  project_id = module.project-gcp.project_id
+  name       = "weatherscanner-tf-state-aws"
+  location   = "europe-west12"
+  versioning = true
+}
+
+module "addresses-gcp" {
+  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/net-address?ref=v40.0.0"
+  project_id = module.project-gcp.project_id
+  global_addresses = {
+    gateway-ext-lb = {}
+  }
+}
+
 module "github-service-account" {
   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/iam-service-account?ref=v40.0.0"
   project_id = module.project-gcp.project_id
@@ -75,13 +99,6 @@ module "nat" {
   region = "europe-west12"
 }
 
-# resource "local_file" "example-env-file" {
-#     filename = "../weather-scanner-crawler/.env"
-#   content = <<EOF
-#     test=${module.vpc_gcp.self_link}
-#   EOF
-# }
-
 module "bastion-service-account" {
   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/iam-service-account?ref=v40.0.0"
   project_id = module.project-gcp.project_id
@@ -89,7 +106,7 @@ module "bastion-service-account" {
   # non-authoritative roles granted *to* the service accounts on other resources
   iam_project_roles = {
     "${module.project-gcp.project_id}" = [
-      "roles/container.clusterViewer"
+      "roles/container.admin"
     ]
   }
 
@@ -100,61 +117,13 @@ module "bastion-service-account" {
   }
 }
 
-# Da buttare giù
-# https://cloud.google.com/kubernetes-engine/docs/tutorials/private-cluster-bastion
-module "bastion-host-vm" {
-  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/compute-vm?ref=v40.0.0"
-  project_id = module.project-gcp.project_id
-  zone       = "europe-west12-b"
+resource "google_compute_managed_ssl_certificate" "default" {
+  name = "weather-scanner-ssl-cert"
 
-  instance_type = "e2-micro"
-  name       = "gke-bastion-host"
-  network_interfaces = [{
-    network    = module.vpc-gcp.self_link
-    subnetwork = module.vpc-gcp.subnet_self_links["europe-west12/gke-bastion-host"]
-  }]
+  project = module.project-gcp.project_id
 
-  service_account = {
-    email = module.bastion-service-account.email
-  }
-  
-}
-
-# Da buttare giù
-module "cluster-gke" {
-  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gke-cluster-standard?ref=v40.0.0"
-  project_id = module.project-gcp.project_id
-  
-  name       = "weather-scanner-gke"
-
-  deletion_protection = false
-  location   = "europe-west12"
-  access_config = {
-    ip_access = {
-      private_endpoint_config = {
-        endpoint_subnetwork = module.vpc-gcp.subnet_ids["europe-west12/gke-cp"]
-        global_access       = false
-      }
-      authorized_ranges = {
-        internal-vms = "10.0.2.0/28" # Solo la connettività dal bastion host può connettersi dal GKE
-      }
-    }
-  }
-
-  default_nodepool = {
-    remove_pool = false
-  }
-
-  vpc_config = {
-    network    = module.vpc-gcp.self_link
-    subnetwork = module.vpc-gcp.subnet_self_links["europe-west12/gke"]
-    secondary_range_names = {
-      pods     = "pods"
-      services = "services"
-    }
-  }
-  labels = {
-    environment = "dev"
+  managed {
+    domains = ["${module.addresses-gcp.global_addresses["gateway-ext-lb"].address}.nip.io"]
   }
 }
 
@@ -189,3 +158,65 @@ module "firewall-gcp" {
     }
   }
 }
+
+# Da buttare giù
+# https://cloud.google.com/kubernetes-engine/docs/tutorials/private-cluster-bastion
+# module "bastion-host-vm" {
+#   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/compute-vm?ref=v40.0.0"
+#   project_id = module.project-gcp.project_id
+#   zone       = "europe-west12-b"
+
+#   instance_type = "e2-micro"
+#   name       = "gke-bastion-host"
+#   network_interfaces = [{
+#     network    = module.vpc-gcp.self_link
+#     subnetwork = module.vpc-gcp.subnet_self_links["europe-west12/gke-bastion-host"]
+#   }]
+
+#   service_account = {
+#     email = module.bastion-service-account.email
+#   }
+# }
+
+# # Da buttare giù
+# module "cluster-gke" {
+#   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gke-cluster-standard?ref=v40.0.0"
+#   project_id = module.project-gcp.project_id
+  
+#   name       = "weather-scanner-gke"
+
+#   deletion_protection = false
+#   location   = "europe-west12"
+#   access_config = {
+#     ip_access = {
+#       private_endpoint_config = {
+#         endpoint_subnetwork = module.vpc-gcp.subnet_ids["europe-west12/gke-cp"]
+#         global_access       = false
+#       }
+#       authorized_ranges = {
+#         internal-vms = "10.0.2.0/28" # Solo la connettività dal bastion host può connettersi dal GKE
+#       }
+#     }
+#   }
+
+#   default_nodepool = {
+#     remove_pool = false
+#   }
+
+#   enable_features = {
+#     gateway_api = true
+
+#   }
+
+#   vpc_config = {
+#     network    = module.vpc-gcp.self_link
+#     subnetwork = module.vpc-gcp.subnet_self_links["europe-west12/gke"]
+#     secondary_range_names = {
+#       pods     = "pods"
+#       services = "services"
+#     }
+#   }
+#   labels = {
+#     environment = "dev"
+#   }
+# }
