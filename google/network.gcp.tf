@@ -90,7 +90,6 @@ module "github-service-account" {
   }
 }
 
-
 module "nat" {
   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/net-cloudnat?ref=v40.0.0"
   project_id = module.project-gcp.project_id
@@ -220,8 +219,3 @@ module "firewall-gcp" {
 #     environment = "dev"
 #   }
 # }
-
-import {
-  id = "projects/${module.project-gcp.project_id}/global/addresses/gateway-ext-lb"
-  to = module.addresses-gcp.google_compute_global_address.global["gateway-ext-lb"]
-}
