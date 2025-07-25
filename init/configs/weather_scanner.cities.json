@@ -1,0 +1,30 @@
+[{
+  "_id": {
+    "$oid": "65df556e769d3eab74530e09"
+  },
+  "name": "messina"
+},
+{
+  "_id": {
+    "$oid": "65df5589769d3eab74530e0a"
+  },
+  "name": "palermo"
+},
+{
+  "_id": {
+    "$oid": "65df5595769d3eab74530e0b"
+  },
+  "name": "milano"
+},
+{
+  "_id": {
+    "$oid": "648dc4dc2f8bac5b1879c1b6"
+  },
+  "name": "roma"
+},
+{
+  "_id": {
+    "$oid": "66030c3d62cd636d35f29170"
+  },
+  "name": "torino"
+}]

@@ -1,0 +1,80 @@
+[{
+  "_id": {
+    "$oid": "6495a92dd6c3d37bbf4878d2"
+  },
+  "formula": "mape",
+  "sum": 224.2461008333333,
+  "n": 580,
+  "servizio": "3bmeteo",
+  "mape": 39
+},
+{
+  "_id": {
+    "$oid": "6495a9afd6c3d37bbf4878d3"
+  },
+  "formula": "rmse",
+  "sum": 610,
+  "n": 552,
+  "servizio": "3bmeteo",
+  "rmse": 1.051
+},
+{
+  "_id": {
+    "$oid": "6495a9ced6c3d37bbf4878d4"
+  },
+  "formula": "bias",
+  "sum": 23,
+  "n": 594,
+  "servizio": "3bmeteo",
+  "bias": 0.039
+},
+{
+  "_id": {
+    "$oid": "6495bf96d6c3d37bbf4878d5"
+  },
+  "formula": "mape",
+  "sum": 213.56364999999997,
+  "n": 580,
+  "servizio": "meteoit",
+  "mape": 37
+},
+{
+  "_id": {
+    "$oid": "6495bfccd6c3d37bbf4878d6"
+  },
+  "formula": "rmse",
+  "sum": 644,
+  "n": 552,
+  "servizio": "meteoit",
+  "rmse": 1.08
+},
+{
+  "_id": {
+    "$oid": "6495bfdcd6c3d37bbf4878d7"
+  },
+  "formula": "bias",
+  "sum": 56,
+  "n": 552,
+  "servizio": "meteoit",
+  "bias": 0.101
+},
+{
+  "_id": {
+    "$oid": "6496fea4d3450c2fc2016ca5"
+  },
+  "formula": "wbias",
+  "sum": 112.33332609999998,
+  "n": 1095.999945600001,
+  "servizio": "3bmeteo",
+  "wbias": 0.102
+},
+{
+  "_id": {
+    "$oid": "64970107d3450c2fc2016ca7"
+  },
+  "formula": "wbias",
+  "sum": 131.99999239999997,
+  "n": 1095.999945600001,
+  "servizio": "meteoit",
+  "wbias": 0.12
+}]
