@@ -20,7 +20,7 @@ resource "aws_docdb_cluster_instance" "default" {
 
 resource "aws_security_group" "docdb_sg" {
   name = "weather-scanner-docdb-sg"
-  description = "Consente accesso da EKS a DocumentDB"
+  description = "Consente accesso da GKE a DocumentDB"
   vpc_id = module.vpc_docdb.vpc_id
 
   ingress {
@@ -28,7 +28,7 @@ resource "aws_security_group" "docdb_sg" {
     to_port = 27017
     protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    description = "Accesso da security group dei nodi EKS"
+    description = "Accesso da security group dei nodi GKE"
   }
 
   # Regola di uscita: Permetti tutto il traffico in uscita (comune per DB)

@@ -35,9 +35,6 @@ module "vpc" {
 
   public_subnets = ["10.0.0.0/24"]
 
-  private_subnets      = ["10.0.5.0/24", "10.0.6.0/24"] # per EKS
-  private_subnet_names = ["eks-public-subnet-a", "eks-public-subnet-b"]
-
   create_database_subnet_group           = false
   create_database_subnet_route_table     = true
   create_database_internet_gateway_route = true
