@@ -5,7 +5,7 @@ resource "aws_db_instance" "free_tier_rds" {
   engine_version         = "8.0"
   instance_class         = "db.t3.micro"
   username               = "admin"
-  password               = "mypassword" # CAMBIARE QUESTA PASSWORD! Usa variabili d'ambiente o Vault in produzione.
+  password               = "mypassword"
   parameter_group_name   = "default.mysql8.0"
   skip_final_snapshot    = true # Non crea uno snapshot finale quando l'istanza viene eliminata
   publicly_accessible    = true
