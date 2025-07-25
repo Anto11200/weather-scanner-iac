@@ -54,21 +54,21 @@ module "vpc-gcp" {
   ]
 }
 
-module "gcp-bucket" {
-  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gcs?ref=v40.0.0"
-  name       = "weatherscanner-tf-state-gcp"
-  project_id = module.project-gcp.project_id
-  location   = "europe-west8"
-  versioning = true
-}
+# module "gcp-bucket" {
+#   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gcs?ref=v40.0.0"
+#   name       = "weatherscanner-tf-state-gcp"
+#   project_id = module.project-gcp.project_id
+#   location   = "europe-west8"
+#   versioning = true
+# }
 
-module "aws-bucket" {
-  source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gcs?ref=v40.0.0"
-  project_id = module.project-gcp.project_id
-  name       = "weatherscanner-tf-state-aws"
-  location   = "europe-west12"
-  versioning = true
-}
+# module "aws-bucket" {
+#   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gcs?ref=v40.0.0"
+#   project_id = module.project-gcp.project_id
+#   name       = "weatherscanner-tf-state-aws"
+#   location   = "europe-west12"
+#   versioning = true
+# }
 
 module "addresses-gcp" {
   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/net-address?ref=v40.0.0"
@@ -220,3 +220,8 @@ module "firewall-gcp" {
 #     environment = "dev"
 #   }
 # }
+
+import {
+  id = "projects/${module.project-gcp.project_id}/global/addresses/gateway-ext-lb"
+  to = module.addresses-gcp.google_compute_global_address.global["gateway-ext-lb"]
+}
