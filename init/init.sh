@@ -20,12 +20,12 @@ echo "🔐 Acquisizione credenziali GKE..."
 gcloud container clusters get-credentials weather-scanner-gke --region europe-west12 --project weatherscanner-466411
 
 echo "🔧 Impostazione tls-server-name..."
-kubectl config set-cluster gke_weatherscanner-466411_europe-west12_weather-scanner-gke --server=https://127.0.0.1:8443 --tls-server-name=10.0.1.2
+kubectl config set-cluster gke_weatherscanner-466411_europe-west12_weather-scanner-gke --server=https://127.0.0.1:8443 --tls-server-name=$(gcloud container clusters describe weather-scanner-gke --region europe-west12 --format="value(privateClusterConfig.privateEndpoint)")
 
 # Tunnel SSH: evita duplicazione se già attivo
 echo "🛜 Verifica tunnel SSH..."
 if ! lsof -i :8443 >/dev/null; then
-  gcloud compute ssh --zone "europe-west12-b" "gke-bastion-host" --tunnel-through-iap --project "weatherscanner-466411" -- -fNL 8443:10.0.1.2:443
+  gcloud compute ssh --zone "europe-west12-b" "gke-bastion-host" --tunnel-through-iap --project "weatherscanner-466411" -- -fNL 8443:$(gcloud container clusters describe weather-scanner-gke --region europe-west12 --format="value(privateClusterConfig.privateEndpoint)"):443
   echo "🔗 Tunnel SSH avviato."
 else
   echo "🔁 Tunnel SSH già attivo sulla porta 8443."
@@ -43,7 +43,7 @@ kubectl diff -f ./cluster-manifests >/dev/null 2>&1 || {
 }
 
 # Import MongoDB solo se la collezione è vuota
-MONGO_URI="mongodb://foo:mustbeeightchars@weather-scanner-nlb-41dfd916e651d512.elb.eu-west-1.amazonaws.com:27017/weather_scanner?tls=true&retryWrites=false&tlsInsecure=true&directConnection=true"
+MONGO_URI="mongodb://foo:mustbeeightchars@weather-scanner-nlb-ad65dd6f7883376f.elb.eu-west-1.amazonaws.com:27017/weather_scanner?tls=true&retryWrites=false&tlsInsecure=true&directConnection=true"
 CONFIG_DIR="./configs"
 
 echo "📦 Avvio import MongoDB da $CONFIG_DIR..."

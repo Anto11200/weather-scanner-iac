@@ -19,6 +19,7 @@ data:
   COGNITO_DOMAIN : "https://${aws_cognito_user_pool_domain.weather_scanner_domain.domain}.auth.us-east-1.amazoncognito.com"
   COGNITO_REDIRECT_URI : "${var.gcp_global_ip}/cognito/google/callback/"
   LOGOUT_REDIRECT_URI : "${var.gcp_global_ip}/login/"
+  DOMAIN : "${var.gcp_global_ip}"
   COGNITO_IDENTITY_PROVIDER : "Google"
   MONGO_DB_URI : "mongodb://foo:mustbeeightchars@${module.nlb.dns_name}:27017/weather_scanner?tls=true&retryWrites=false&tlsInsecure=true&directConnection=true"
 EOF
