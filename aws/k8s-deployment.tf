@@ -22,6 +22,7 @@ data:
   DOMAIN : "${var.gcp_global_ip}"
   COGNITO_IDENTITY_PROVIDER : "Google"
   MONGO_DB_URI : "mongodb://foo:mustbeeightchars@${module.nlb.dns_name}:27017/weather_scanner?tls=true&retryWrites=false&tlsInsecure=true&directConnection=true"
+  AWS_CONFIG_FILE : /.aws/credentials
 EOF
 
   filename = "../../weather-scanner-django/manifests/configmap.yaml"
@@ -38,6 +39,7 @@ metadata:
 data: 
   MONGO_DB_URI : "mongodb://foo:mustbeeightchars@${module.nlb.dns_name}:27017/weather_scanner?tls=true&retryWrites=false&tlsInsecure=true&directConnection=true"
   SNS_TOPIC : '${aws_sns_topic.main.id}'
+  AWS_CONFIG_FILE : /.aws/credentials
 EOF
 
   filename = "../../weather-scanner-crawler/manifests/configmap.yaml"

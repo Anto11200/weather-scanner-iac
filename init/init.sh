@@ -80,5 +80,12 @@ print(count)
 done
 
 
+kubectl create secret generic "aws-credentials" \
+  --from-file="credentials=/home/antonio/.aws/credentials" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+  
+kubectl create secret generic db-secret --from-literal=password=mypassword
+
 echo "✅ Tutte le operazioni completate in modo idempotente."
 
