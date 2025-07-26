@@ -17,8 +17,8 @@ data:
   COGNITO_USER_POOL_ID : "${aws_cognito_user_pool.weather_scanner.id}"
   COGNITO_APP_CLIENT_ID : "${aws_cognito_user_pool_client.weather_scanner_app_client.id}"
   COGNITO_DOMAIN : "https://${aws_cognito_user_pool_domain.weather_scanner_domain.domain}.auth.us-east-1.amazoncognito.com"
-  COGNITO_REDIRECT_URI : "https://34.128.177.59.nip.io/cognito/google/callback/"
-  LOGOUT_REDIRECT_URI : "https://34.128.177.59.nip.io/login/"
+  COGNITO_REDIRECT_URI : "${var.gcp_global_ip}/cognito/google/callback/"
+  LOGOUT_REDIRECT_URI : "${var.gcp_global_ip}/login/"
   COGNITO_IDENTITY_PROVIDER : "Google"
   MONGO_DB_URI : "mongodb://foo:mustbeeightchars@${module.nlb.dns_name}:27017/weather_scanner?tls=true&retryWrites=false&tlsInsecure=true&directConnection=true"
 EOF

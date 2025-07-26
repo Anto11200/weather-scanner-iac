@@ -67,8 +67,8 @@ resource "aws_cognito_user_pool_client" "weather_scanner_app_client" {
   generate_secret                      = false
 
   # Da cambiare con le pagine in cui deve essere reindirizzato dopo il login e logout
-  callback_urls                        = ["https://34.128.177.59.nip.io/cognito/google/callback/"] # Da cambiare in futuro con il DNS del cluster
-  logout_urls                          = ["https://34.128.177.59.nip.io/login/"] # Da cambiare in futuro con il DNS del cluster
+  callback_urls                        = ["${var.gcp_global_ip}/cognito/google/callback/"] # Da cambiare in futuro con il DNS del cluster
+  logout_urls                          = ["${var.gcp_global_ip}/login/"] # Da cambiare in futuro con il DNS del cluster
 
   # dipendenza esplicita per assicurare l'ordine corretto
   depends_on = [aws_cognito_identity_provider.google]
