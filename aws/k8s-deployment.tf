@@ -98,11 +98,22 @@ for file in "$CONFIG_DIR"/*.json; do
     collection="$${filename#weather_scanner.}"
     collection="$${collection%.json}"
 
-    echo "🔍 Controllo collezione '$collection'..."
-    count=$(docker run --rm mongo:7.0 \
-        mongo "$MONGO_URI" --quiet --eval "db.getCollection('$collection').countDocuments()")
+    echo "🔍 Verifico se la collezione '$collection' è vuota..."
 
-    if [[ "$count" -eq 0 ]]; then
+    count=$(docker run --rm -v "$PWD:/app" python:3.11-slim bash -c "
+        pip install --quiet pymongo && \
+        python3 -c '
+import os
+from pymongo import MongoClient
+uri = \"$MONGO_URI\"
+collection = \"$collection\"
+client = MongoClient(uri)
+count = client.get_default_database()[collection].count_documents({})
+print(count)
+'" \
+    )
+
+    if [[ "$count" == "0" ]]; then
         echo "📂 Importazione $filename in '$collection'..."
         docker run --rm -v "$PWD:/data" mongo:7.0 \
           mongoimport --uri="$MONGO_URI" \
@@ -113,6 +124,7 @@ for file in "$CONFIG_DIR"/*.json; do
         echo "⏭️ Collezione '$collection' già popolata ($count documenti), salto."
     fi
 done
+
 
 echo "✅ Tutte le operazioni completate in modo idempotente."
 
