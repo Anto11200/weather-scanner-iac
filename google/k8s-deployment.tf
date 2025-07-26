@@ -27,7 +27,7 @@ resource "local_file" "aws_tfvar" {
   content = <<EOF
 google_client_id     = "${var.google_client_id}"
 google_client_secret = "${var.google_client_secret}"
-gcp_global_ip = "${module.addresses-gcp.global_addresses["gateway-ext-lb"].address}.nip.io"
+gcp_global_ip = "https://${module.addresses-gcp.global_addresses["gateway-ext-lb"].address}.nip.io"
 EOF
   filename = "../aws/terraform.tfvars"
 }
