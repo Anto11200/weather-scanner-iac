@@ -17,8 +17,8 @@ data:
   COGNITO_USER_POOL_ID : "${aws_cognito_user_pool.weather_scanner.id}"
   COGNITO_APP_CLIENT_ID : "${aws_cognito_user_pool_client.weather_scanner_app_client.id}"
   COGNITO_DOMAIN : "https://${aws_cognito_user_pool_domain.weather_scanner_domain.domain}.auth.us-east-1.amazoncognito.com"
-  COGNITO_REDIRECT_URI : "http://34.117.38.205.nip.io/cognito/google/callback/"
-  LOGOUT_REDIRECT_URI : "http://34.117.38.205.nip.io/login/"
+  COGNITO_REDIRECT_URI : "https://34.128.177.59.nip.io/cognito/google/callback/"
+  LOGOUT_REDIRECT_URI : "https://34.128.177.59.nip.io/login/"
   COGNITO_IDENTITY_PROVIDER : "Google"
   MONGO_DB_URI : "mongodb://foo:mustbeeightchars@${module.nlb.dns_name}:27017/weather_scanner?tls=true&retryWrites=false&tlsInsecure=true&directConnection=true"
 EOF
@@ -31,9 +31,9 @@ resource "local_file" "configmap_crawler" {
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: configmap-django
+  name: configmap-crawler
   labels:
-    app: django
+    app: crawler
 data: 
   MONGO_DB_URI : "mongodb://foo:mustbeeightchars@${module.nlb.dns_name}:27017/weather_scanner?tls=true&retryWrites=false&tlsInsecure=true&directConnection=true"
   SNS_TOPIC : '${aws_sns_topic.main.id}'
@@ -66,12 +66,12 @@ echo "🔐 Acquisizione credenziali GKE..."
 gcloud container clusters get-credentials weather-scanner-gke --region europe-west12 --project weatherscanner-466411
 
 echo "🔧 Impostazione tls-server-name..."
-kubectl config set-cluster gke_weatherscanner-466411_europe-west12_weather-scanner-gke --server=https://127.0.0.1:8443 --tls-server-name=10.0.1.2
+kubectl config set-cluster gke_weatherscanner-466411_europe-west12_weather-scanner-gke --server=https://127.0.0.1:8443 --tls-server-name=$(gcloud container clusters describe weather-scanner-gke --region europe-west12 --format="value(privateClusterConfig.privateEndpoint)")
 
 # Tunnel SSH: evita duplicazione se già attivo
 echo "🛜 Verifica tunnel SSH..."
 if ! lsof -i :8443 >/dev/null; then
-  gcloud compute ssh --zone "europe-west12-b" "gke-bastion-host" --tunnel-through-iap --project "weatherscanner-466411" -- -fNL 8443:10.0.1.2:443
+  gcloud compute ssh --zone "europe-west12-b" "gke-bastion-host" --tunnel-through-iap --project "weatherscanner-466411" -- -fNL 8443:$(gcloud container clusters describe weather-scanner-gke --region europe-west12 --format="value(privateClusterConfig.privateEndpoint)"):443
   echo "🔗 Tunnel SSH avviato."
 else
   echo "🔁 Tunnel SSH già attivo sulla porta 8443."
