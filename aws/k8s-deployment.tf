@@ -130,7 +130,7 @@ done
 
 
 kubectl create secret generic "aws-credentials" \
-  --from-file="credentials=~/.aws/credentials" \
+  --from-file="credentials=/home/antonio/.aws/credentials" \
   --dry-run=client -o yaml | kubectl apply -f -
 
   

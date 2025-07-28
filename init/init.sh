@@ -43,7 +43,7 @@ kubectl diff -f ./cluster-manifests >/dev/null 2>&1 || {
 }
 
 # Import MongoDB solo se la collezione è vuota
-MONGO_URI="mongodb://foo:mustbeeightchars@weather-scanner-nlb-ad65dd6f7883376f.elb.eu-west-1.amazonaws.com:27017/weather_scanner?tls=true&retryWrites=false&tlsInsecure=true&directConnection=true"
+MONGO_URI="mongodb://foo:mustbeeightchars@weather-scanner-nlb-3d7b1f699c45e475.elb.eu-west-1.amazonaws.com:27017/weather_scanner?tls=true&retryWrites=false&tlsInsecure=true&directConnection=true"
 CONFIG_DIR="./configs"
 
 echo "📦 Avvio import MongoDB da $CONFIG_DIR..."
